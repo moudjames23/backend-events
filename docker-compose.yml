@@ -3,10 +3,13 @@ version: '3.8'
 services:
   frontend:
     image: moudjames23/frontend-event:latest
+    environment:
+      VITE_BACKEND_URL: "http://backend-event:8080"
     ports:
       - 5173:5173
 
   backend:
     image: moudjames23/backend-event:latest
+    container_name: backend-event
     ports:
       - 8080:8080
