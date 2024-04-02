@@ -1,0 +1,53 @@
+name: Actions spring-collab
+on:
+  - push
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3.10.0
+      with:
+        java-version: '17'
+        distribution: 'adopt'
+        cache: maven
+
+    - name: Run test
+      run: ./mvnw test
+
+    - name: Build with Maven
+      run: mvn clean install
+
+    - name: Setup Trivy
+      run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b /usr/local/bin
+      if: success()
+
+    - name: Dockerfile scan
+      run: trivy config --severity HIGH,CRITICAL Dockerfile --format json > dockerfile_security_scan.json
+
+    - name: Repo scan
+      run: trivy repo --severity HIGH,CRITICAL --dependency-tree . --format json > repo_security_scan.json
+    
+    - name: Build & push Docker image
+      uses: mr-smithers-excellent/docker-build-push@v5
+      with:
+        image: moudjames23/backend-event
+        tags: latest
+        registry: docker.io
+        dockerfile: Dockerfile
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Scan Docker image
+      run: trivy image --severity HIGH,CRITICAL moudjames23/spring-collab --format json > dockerimage_security_scan.json
+
+    - name: Upload Security Scan Results
+      uses: actions/upload-artifact@v2
+      with:
+        name: security-reports
+        path: |
+          dockerfile_security_scan.json
+          repo_security_scan.json
+          dockerimage_security_scan.json
