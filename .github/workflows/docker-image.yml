@@ -41,7 +41,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Scan Docker image
-      run: trivy image --severity HIGH,CRITICAL moudjames23/spring-collab --format json > dockerimage_security_scan.json
+      run: trivy image --severity HIGH,CRITICAL moudjames23/backend-event --format json > dockerimage_security_scan.json
 
     - name: Upload Security Scan Results
       uses: actions/upload-artifact@v2
